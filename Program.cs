@@ -2,12 +2,7 @@
 using System.Text;
 using System.Threading.Tasks;
 
-public class Progress
-{
-    public int done = 0;
-    public int total = 0;
-    public bool canceled = false;
-}
+
 internal class Program
 {
     static private object _lock = new object();
