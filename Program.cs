@@ -1,8 +1,14 @@
 ﻿using System.Runtime.InteropServices;
 
+public class Progress
+{
+    public int done = 0;
+    public int total = 0;
+}
 internal class Program
 {
     static private List<Task> tasks = new List<Task>();
+    static private List<Progress> progresses = new List<Progress>();
     private static CancellationTokenSource cts = new CancellationTokenSource();
 
     private static async Task Main(string[] args)
@@ -15,7 +21,11 @@ internal class Program
             {
                 var key = Console.ReadKey(true).KeyChar;
                 if(key == 't')
-                    AddTask(cts.Token);
+                {
+                    var p = new Progress();
+                    progresses.Add(p);
+                    AddTask(p, cts.Token);
+                }
                 
                 if(key == 'c')
                 {
@@ -27,40 +37,48 @@ internal class Program
         }
     }
 
-    private static void AddTask(CancellationToken ct)
+    private static void AddTask(Progress p, CancellationToken ct)
     {
-        var task = AnImportantTask(ct);
+        var task = AnImportantTask(p, ct);
         tasks.Add(task);
-        task.ContinueWith((task) => Finished(task));
+        task.ContinueWith((task) => Finished(p, task));
         Write();
     }
 
-    private static void Finished(Task task)
+    private static void Finished(Progress p, Task task)
     {
         tasks.Remove(task);
+        progresses.Remove(p);
         Write();
     }
 
-    private static async Task AnImportantTask(CancellationToken ct)
+    private static async Task AnImportantTask(Progress p, CancellationToken ct)
     {
         var ticks = Random.Shared.Next(1, 10);
         const int tickLength = 500;
+
+        p.total = ticks;
         
         try
         {
             for(int i = 0; i < ticks; i++)
             {
+                p.done = i;
                 ct.ThrowIfCancellationRequested();
                 await Task.Delay(tickLength);
             }
-        } catch {}
+        } catch (OperationCanceledException){
+            
+        }
     }
 
     private static void Write()
     {
-        Console.CursorTop = Console.CursorTop - 1;
-        Console.WriteLine("");
-        Console.CursorTop = Console.CursorTop - 1;
+        Console.Clear();
         Console.WriteLine($"tasks {tasks.Count()}              ");
+        foreach( var progress in progresses )
+        {
+            Console.WriteLine($"{progress.done}/{progress.total}");
+        }
     }
 }
