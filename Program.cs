@@ -43,14 +43,16 @@ internal class Program
 
     private static async Task AnImportantTask(CancellationToken ct)
     {
-        ct.ThrowIfCancellationRequested();
-        try 
+        var ticks = Random.Shared.Next(1, 10);
+        const int tickLength = 500;
+        
+        try
         {
-            var ticks = Random.Shared.Next(1, 10);
-            const int tickLength = 500;
-            
-            await Task.Delay(tickLength, ct);
-
+            for(int i = 0; i < ticks; i++)
+            {
+                ct.ThrowIfCancellationRequested();
+                await Task.Delay(tickLength);
+            }
         } catch {}
     }
 
