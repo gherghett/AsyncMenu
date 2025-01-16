@@ -97,7 +97,7 @@ internal class Program
                 sb.Append('=', (int)(fraction*width));
                 sb.Append(' ', width-((int)(fraction*width)));
                 Console.Write(sb.ToString());
-                Console.WriteLine((progress.canceled ? "Canceled": $"{progress.done/progress.total*100}%"));
+                Console.WriteLine((progress.canceled ? "Canceled": $"{Math.Round(fraction*100)}%"));
             }
         }
     }
