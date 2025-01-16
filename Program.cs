@@ -20,6 +20,7 @@ internal class Program
                 if(key == 'c')
                 {
                     cts.Cancel();
+                    cts.Dispose();
                     cts = new CancellationTokenSource();
                 }
             }
@@ -42,15 +43,15 @@ internal class Program
 
     private static async Task AnImportantTask(CancellationToken ct)
     {
-        var ticks = Random.Shared.Next(1, 10);
-        const int tickLength = 500;
-        for(int i = 0; i < ticks; i++)
+        ct.ThrowIfCancellationRequested();
+        try 
         {
-            if(ct.IsCancellationRequested)
-                return;
+            var ticks = Random.Shared.Next(1, 10);
+            const int tickLength = 500;
+            
+            await Task.Delay(tickLength, ct);
 
-            await Task.Delay(tickLength);
-        } 
+        } catch {}
     }
 
     private static void Write()
@@ -58,6 +59,6 @@ internal class Program
         Console.CursorTop = Console.CursorTop - 1;
         Console.WriteLine("");
         Console.CursorTop = Console.CursorTop - 1;
-        Console.WriteLine($"tasks {tasks.Count()}          ");
+        Console.WriteLine($"tasks {tasks.Count()}              ");
     }
 }
