@@ -1,19 +1,26 @@
-﻿using System.Runtime.InteropServices;
+﻿using System.Data;
+using System.Diagnostics;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
 
 internal class Program
 {
-    static private object _lock = new object();
     static private List<Task> tasks = new List<Task>();
     static private List<Progress> progresses = new List<Progress>();
     private static CancellationTokenSource cts = new CancellationTokenSource();
+    static private object _lock = new object();
+    private static bool update = false; //flag to signal a new Write to screen is needeed
+    private const int millisecondsPerFrame = 100;
 
-    private static async Task Main(string[] args)
+    private static Task Main(string[] args)
     {
-        Console.WriteLine("Hello, World! press t for new task");
-        Console.WriteLine($"tasks {tasks.Count()}");
+        Write(); 
+
+        var timer = new Stopwatch(); //
+        timer.Start();
+
         while (true)
         {
             if(Console.KeyAvailable)
@@ -32,10 +39,17 @@ internal class Program
                 if(key == 'c')
                 {
                     cts.Cancel();
-                    Write();
+                    update = true;
                     cts.Dispose();
                     cts = new CancellationTokenSource();
                 }
+            }
+
+            if(update && timer.ElapsedMilliseconds > millisecondsPerFrame)
+            {
+                Write();
+                update = false;
+                timer.Restart();
             }
         }
     }
@@ -48,7 +62,7 @@ internal class Program
             tasks.Add(task);
         }
         task.ContinueWith((task) => Finished(p, task));
-        Write();
+        update = true;
     }
 
     private static async Task Finished(Progress p, Task task)
@@ -59,13 +73,13 @@ internal class Program
             tasks.Remove(task);
             progresses.Remove(p);
         }
-        Write();
+        update = true;
     }
 
     private static async Task AnImportantTask(Progress p, CancellationToken ct)
     {
-        var ticks = Random.Shared.Next(1, 10);
-        const int tickLength = 500;
+        var ticks = Random.Shared.Next(10, 100);
+        const int tickLength = 50;
 
         p.total = ticks;
         
@@ -76,7 +90,7 @@ internal class Program
                 p.done = i+1;
                 ct.ThrowIfCancellationRequested();
                 await Task.Delay(tickLength);
-                Write();
+                update = true;
             }
         } catch (OperationCanceledException){
             p.canceled = true;
@@ -86,9 +100,10 @@ internal class Program
     private static void Write()
     {
         Console.Clear();
-        Console.WriteLine($"tasks {tasks.Count()}              ");
+        Console.WriteLine("[T] to start new task, [C] to cancel all tasks");
         lock (_lock)
         {
+            Console.WriteLine($"tasks {tasks.Count()}              ");
             foreach( var progress in progresses )
             {
                 int width = 50;
